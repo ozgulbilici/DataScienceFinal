@@ -1,0 +1,654 @@
+---
+title: "CENG 4515 DATA SCIENCE AND ANALYTICS-FINAL PROJECT"
+author: "İrem Uslu-Hatice Özgül Bilici"
+date: "2023-01-06"
+output: html_document
+---
+
+
+This data set contains records related to red and white variants of the Portuguese Vinho Verde wine. It contains information from 1599 red wine samples and 4898 white wine samples.There are also 13 attributes.The description of each attirbute is shown in the table below.
+
+<p>https://www.kaggle.com/datasets/ruthgn/wine-quality-data-set-red-white-wine<p>
+
+
+<html>
+<head>
+<style>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+</head>
+<body>
+
+<h2>Dataset Information</h2>
+
+<table>
+   <tr>
+    <th>Column</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>Wine Type</td>
+    <td>Types of wine. White or Red? Response variable.</td>
+  </tr>
+  <tr>
+    <td>Fixed Acidity</td>
+    <td>Many acids present in wine are either fixed or nonvolatile, meaning they do not evaporate easily. </td>
+
+  </tr>
+  <tr>
+    <td>Volatile Acidity</td>
+    <td>High levels of acetic acid in wine can cause it to taste vinegary and unpleasant.</td>
+  </tr>
+  
+  <tr>
+    <td>Citric Acid</td>
+    <td>Citric acid, when present in small amounts, can contribute a sense of freshness and enhance the flavor of wines.</td>
+  </tr>
+  <tr>
+    <td>Residual Sugar</td>
+    <td>The amount of sugar remaining after fermentation stops, it's rare to find wines with less than 1 gram/liter and wines with greater than 45 grams/liter are considered sweet</td>
+  </tr>
+  <tr>
+    <td>Chlorides</td>
+    <td>The amount of salt in the wine.</td>
+  </tr>
+    <tr>
+    <td>Free SulfurDioxide</td>
+    <td>Sulfur dioxide (SO2) exists in a state of equilibrium between its molecular form (as a dissolved gas) and the bisulfite ion. It helps prevent the growth of microorganisms and the oxidation of wine.</td>
+  </tr>
+    <tr>
+    <td>Total SulfurDioxide</td>
+    <td>Sulfur dioxide (SO2) exists in both free and bound forms. When present in low concentrations, it is generally not noticeable in the aroma or flavor of wine. However, if the concentration of free SO2 exceeds 50 ppm, it becomes evident in the wine's nose and taste..</td>
+  </tr>
+    <tr>
+    <td>Density</td>
+    <td>The density of a wine is similar to that of water and is influenced by its alcohol and sugar content.</td>
+  </tr>
+    <tr>
+    <td>pH</td>
+    <td>The pH scale is used to measure the acidity or basicity of a wine, with 0 being very acidic and 14 being very basic. Most wines fall within the range of 3-4 on the pH scale.</td>
+  </tr>
+    <tr>
+    <td>Sulphates</td>
+    <td>Potassium metabisulfite is a wine additive that can increase the levels of sulfur dioxide gas (SO2) in the wine. SO2 acts as both an antimicrobial and an antioxidant.</td>
+  </tr>
+    <tr>
+    <td>Alcohol</td>
+    <td>The percent alcohol content of the wine.</td>
+  </tr>
+    </tr>
+    <tr>
+    <td>Quality</td>
+    <td>Quality of wines from 3 to 9</td>
+  </tr>
+
+</table>
+<hr>
+
+
+
+
+
+## Importing libraries
+
+```{r echo=T, results='hide', warning=FALSE, message=FALSE}
+  library(ggplot2)
+  library(tidyverse)
+  library(dplyr)
+  library(plyr)
+  library(MASS)
+  library(caret)
+  library(corrplot)
+  library(ROCR)
+  library(Rcpp)
+  library(gmodels)
+  library(pROC)
+  library(InformationValue)
+  library(factoextra)
+  library(car)
+  library(ROSE)
+  library(rattle)
+  library(RColorBrewer)
+  library(rpart.plot)
+  library(Amelia)
+  library(e1071)
+  library(caTools)
+  library(fpc)
+  library(dbscan)
+  library(missForest)
+  library(mice)
+  library(smotefamily)
+```
+
+
+## 1-) Description of Data 
+
+```{r}
+setwd("C:/Users/Mary/Desktop/")
+wineQuality <- read.csv("winequality.csv" , header = TRUE , sep = ",")
+
+str(wineQuality)
+```
+
+
+## 2-) Exploratory Data Analysis
+
+```{r}
+summary(wineQuality)
+head(wineQuality , 5)
+
+
+colnames(wineQuality) <- c("wine_type", "fixed_acidity", 
+                       "volatile_acidity", "citric_acid", "residual_sugar","chlorides", "free_sulfurDioxide","total_sulfurDioxide","density","pH","sulphates","alcohol","quality")
+
+colnames(wineQuality)
+
+
+wineQuality <- transform(wineQuality ,
+                                  wine_type = as.factor(wine_type)
+                                  )
+ 
+wineQuality <- transform(wineQuality ,
+                         quality = as.factor(quality)
+                                  )
+
+```
+<br>The wine_type variable has been converted to the variable factor. Because, in our assignment, the answer variable is the wine type. The properties of each column were examined with the Summary function. Finally, we made the column names more understandable.<br>
+
+```{r}
+
+  df1 <- wineQuality %>% 
+                          filter(wine_type=="white")%>%
+                          dplyr::select(wine_type,pH)%>%
+                          arrange(pH)
+  
+head(df1,6)
+```
+<br>Sorts the ph values ​​of the white wine types from the smallest to the largest.<br>
+
+
+```{r}
+
+  df2 <- wineQuality %>% 
+                          filter(wine_type == "white"  & residual_sugar>20)%>%
+                          dplyr::select(wine_type,alcohol)%>%
+                          arrange(alcohol)
+  head(df2,6)
+
+```
+<br>Lists white wines with a residual sugar value greater than 20 and the lowest alcohol content.<br>
+
+
+## 3-) Visualization Techniques
+
+This bar plot shows how many red and white wines are in total.White wine is more numerous than red.<br>
+
+```{r}
+  ggplot(data=wineQuality, aes(x=wine_type)) +
+  geom_bar(fill="pink", alpha=0.7)+
+  labs(title = "BarChart", x="Wine Type", y="Count")
+
+
+```
+
+<br>
+This bar plot separates red and white wines according to the quality of the wines. We can say that the highest quality wines belong to white wine.
+<br>
+```{r}
+  ggplot(wineQuality , mapping = aes(x = wine_type, fill = quality)) + 
+  geom_bar(position = "identity",color="black") +
+  scale_fill_brewer(palette = "Pastel2")+
+  labs( x = "Wine's Type",
+        y = "Count",
+        title = "Total quality of wines by type")
+
+```
+
+<br>
+We can say that 6th quality wines contain alcohol in amounts between 9 and 13.There is little or no quality wine with a high alcohol content .<br>
+
+```{r}
+  ggplot(wineQuality, aes(alcohol,fill=quality)) + 
+  geom_histogram(position="identity",binwidth=0.9,color="pink") +
+  scale_fill_brewer(palette = "Pastel2")+
+  ggtitle("Histogram graph showing the distribution of alcohol percentages 
+          according to the quality score of the wines") +
+  xlab("Alcohol content in wines") + 
+  ylab("Count")
+```
+
+<br>
+While 3rd and 8 quality grade wines do not contain outliers, others do. Especially 6th quality wines have too many outliers. Likewise, 4,5,7 and 9 have outliers.
+On average, they all contain similar residual_sugar.<br>
+
+```{r , warning=FALSE}
+  ggplot(data=wineQuality, aes(x=quality, y=residual_sugar, fill= quality)) +
+  geom_boxplot() + 
+  labs(title = "Box chart of wines with residual sugar content by wine quality", x = "Quality of Wine", y="Residual Sugar of Wine") +
+  scale_fill_brewer(palette = "Pastel2")+
+  stat_summary(fun=mean, geom="point", shape=4, size=2) +
+  theme(axis.text.x=element_text(angle=-45,hjust=0,vjust=0))
+  
+```
+
+<br>
+  White wine contains more sulfur dioxide than red wine.The mean free sulfur dioxide ratio is also higher in white wine than in red.<br>
+  
+```{r , warning=FALSE}  
+  ggplot(wineQuality, mapping = aes(x = wine_type, y = free_sulfurDioxide , fill=wine_type)) + 
+  geom_boxplot(outlier.size = 2 ,outlier.shape = 21)+
+  stat_summary(fun.y = "mean",shape=4,size=0.2)+
+  labs(title = "Box Chart of Free SulfurDioxide Amount by Wine Type", x="Wine's Types", y="The amount of free sulfur dioxide in wine")+
+  scale_fill_brewer(palette = "Pastel2")
+
+```
+
+<br>
+Red wine is the most dense according to the density chart.<br>
+
+```{r , warning=FALSE}
+
+qplot(fill = wine_type, 
+      x = density, 
+      data = wineQuality, 
+      geom = "density",
+      alpha = I(0.5),
+      adjust = 2
+      )+ labs( x = "Display of Density Ratios by Type of Wines")
+
+```
+<br>
+
+## Z.a-) Imbalanced Data Set
+```{r}
+table(wineQuality$wine_type)
+prop.table(table(wineQuality$wine_type))
+ggplot(wineQuality, aes(x=reorder(wine_type, wine_type, function(x)-length(x)))) +
+geom_bar(fill='pink') +  labs(x='Wine_Type Count')
+
+```
+
+```{r}
+imbalanced.wineQuality <- wineQuality
+missing.wineQuality <- wineQuality
+```
+
+```{r}
+n_legit <- 4898
+new_frac_legit <- 0.5
+new_n_total <- n_legit/new_frac_legit
+
+oversampling_result <- ovun.sample(wine_type ~ ., data = wineQuality, method = "over", 
+                                   N = new_n_total, seed = 2018)
+dataset <- oversampling_result$data
+row.names(dataset) <- NULL
+table(dataset$wine_type)
+
+```
+
+```{r}
+prop.table(table(dataset$wine_type))
+
+ggplot(dataset, aes(x=reorder(wine_type, 
+                              wine_type,
+                              function(x)-length(x))))+
+                              geom_bar(fill='pink') +
+                              labs(x='Oversampled Wine Type')
+```
+
+<br>The wine_type column we use in our data is not balanced. There is a noticeable imbalance between them.Red is 0.24 while white wines is 0.75.When we checked our data, our values ​​were found to be imbalanced. Therefore, we used oversampling to convert it to a balanced data set. The ratios, which were around 1500,4800 at first, approached around 4800 and 4900 after oversampling.With the bar graph,both imbalance and balance values are observed..<br>
+
+## 4-) Checking  multicollinearity
+
+```{r}
+
+wineQuality <- na.omit(wineQuality)
+correlations <- cor(wineQuality[c(2:12)])
+corrplot(correlations,method = "circle",tl.cex = 0.6, tl.col = "black")
+
+```
+
+<br>
+Dark blue dots have strong positive correlations.
+For example, there is a strong positive relationship between free_sulfurDioxide and total_sulfurDioxide.<br> 
+Or there is a weak positive relationship between residual_sugar and free_sulfurDioxide.We can also mention that there is a strong negative relationship between density and alcohol.
+<br>
+
+
+## 5-) Apply PCA
+
+
+```{r}
+
+winePr <- prcomp(wineQuality[,c(2:11)] , scale=TRUE,center = TRUE)
+summary(winePr)
+
+```
+
+<br>
+
+```{r,warning=FALSE}
+
+fviz_eig(winePr, addlabels=TRUE, ylim=c(0,60), geom = c("bar", "line"), barfill = "pink",  
+         barcolor="blue",linecolor = "red", ncp=10)+
+         labs(title = "All states of wine types - PCA",
+          x = "Principal Components", y = "% of variances")
+
+```
+
+<br>
+
+```{r,warning=FALSE}
+fviz_pca_biplot(winePr, col.ind = wineQuality$wine_type, col="black",
+                palette = "Pastel2", geom = "point", repel=TRUE,
+                legend.title="Wine_Type", addEllipses = TRUE)
+
+
+```
+
+<br>
+I observed that the eigenvalues ​​of the first 3 components were >1. This explains a large part of the variance. So we can reduce our values from 10 to 3.When we examine the PCA values, the variance values ​​decrease as expected.It was also observed that more than 50% of the variance could be explained by the variables PC1 and PC2.That's why pc1 and pc2 components were used.The distribution of red and white wine with 2 components was clearly observed.Red wines cluster on the right, while white wines cluster on the left.When we examine the axes, we see that red wines are characterized by variables such as pH, volatile_acidity, sulphates.In white wine, on the other hand, variables such as citric_acid and residual_sugar were characterized.<br>
+
+
+## 6-) Apply Logistic Regression or Regression.
+
+```{r}
+
+set.seed(200)
+trainIndex <- createDataPartition(wineQuality$wine_type, p = .8, list = FALSE)
+
+trainSet <- wineQuality[trainIndex, ]
+testSet <- wineQuality[-trainIndex, ]
+
+
+
+```
+
+```{r}
+
+modelLogistic <- glm(wine_type~.,family="binomial", data=trainSet)
+summary(modelLogistic)
+
+```
+<br>pH,fixed_acidity and citric_acid are variables that no significant effect. in our model.Our values ​​such as alcohol, density, free_sulfurDioxide are significance according to the wine type.<br>
+
+```{r}
+prediction <- predict(modelLogistic , testSet ,type="response")
+
+confMatrixLog <- confusionMatrix(testSet$wine_type , prediction)
+confMatrixLog
+
+accur <- (confMatrixLog[1,1] + confMatrixLog[2,2])/ sum(confMatrixLog)
+accur
+```
+<br>314 red and 973 white wines were predicted correctly.The accuracy rate of the model we created is 0.99. Correct predictions were made in the test data set at a rate of 0.99.<br>
+
+```{r}
+rocModelLog <- roc(testSet$wine_type ~ prediction) #control = negative class , case = positive class
+```
+
+```{r}
+plot(rocModelLog)
+
+rocModelLog
+```
+<br>
+The larger the area under the ROC curve, the better our model will be, and the higher the predictive power will be. The prediction performance is also excellent as the AUC value of the model we created is 0.99.<br>
+
+
+## 7-) Two clustering techniques.
+#### a) Since there are categorical variables in our data and we have a large data set, we used K-means and DBSCAN clustering methods.
+
+### 7.1.X-) K-means Clustering
+
+```{r}
+w_pr <- prcomp(wineQuality[,c(2:4)], center = TRUE, scale = TRUE)
+summary(w_pr)
+```
+
+```{r}
+screeplot(w_pr, type = "l", npcs = 5, main = "Screeplot of the first 5 PCs")
+abline(h = 1, col="red", lty=5)
+legend("topright", legend=c("Eigenvalue = 1"),
+       col=c("red"), lty=5, cex=0.6)
+```
+
+
+```{r}
+plot(w_pr$x[,1],w_pr$x[,2], xlab="PC1 (47%)", ylab = "PC2 (40%)", main = "PC1 / PC2 - plot")
+
+
+set.seed(101)
+km <- kmeans(wineQuality[,2:4], 2)
+plot(w_pr$x[,1],w_pr$x[,2], xlab="PC1 (47%)", 
+     ylab = "PC2 (40%)", 
+     main = "PC1 / PC2 - plot", 
+     col=km$cluster)
+```
+
+<br>Performs k-means clustering on the data in columns 2 through 4 of the wineQuality data frame and stores the results in the object km. The number 2 indicates that the function should create 2 clusters.<br>
+
+
+```{r}
+km$centers
+```
+<br>Finds the centers of columns 2 through 4 with km$centers.<br>
+
+
+
+```{r}
+set.seed(102)
+km <- kmeans(wineQuality[,2:4], 3)
+plot(w_pr$x[,1],w_pr$x[,2], xlab="PC1 (47%)", 
+     ylab = "PC2 (41%)", 
+     main = "PC1 / PC2 - plot", 
+     col=km$cluster)
+```
+<br>Performs k-means clustering on the data in columns 2 through 4 of the wineQuality data frame and stores the results in the object km. The number 3 indicates that the function should create 2 clusters.Now based on the two dimesions, we will try to make three clusters. So, here we are pre-defining K=3, the number of clusters we want by K-Means.<br>
+
+
+```{r}
+km$centers
+table(km$cluster, wineQuality$wine_type)
+```
+
+
+```{r}
+km <- kmeans(wineQuality[,2:4], 3)
+fviz_cluster(km, data = wineQuality[,2:4])
+```
+<br>PCA was applied to the data and columns 2 and 4, which are numeric, were selected for column selection. The value of 3 was chosen for the k point and the center points were determined. These center points were then clustered using the kmeans method. The results of the kmeans clustering were then visualized.As seen in the figure, there were 3 clusters, namely blue, pink and green.<br>
+
+
+### 7.2-) DBSCAN Clustering
+
+```{r}
+kNNdistplot(wineQuality[2:4] , k =3)
+abline(h=0.45,lty=2)
+```
+
+
+```{r}
+f<- fpc::dbscan(wineQuality[2:4],eps=0.45,MinPts = 4)
+d <- dbscan::dbscan(wineQuality[2:4],0.45,4)
+
+fviz_cluster(f,wineQuality[2:4],geom="point")
+```
+
+<br>We acted by thinking that we need at least 4 points to create the clusters. We observed that one or two values ​​were outside of these density clusters. These are outliers. In our data set, we examined the areas with higher density data points from features 2 to 4. density cluster was obtained.<br>
+
+#### b)Clustering was done by using 3 clusters in kmeans clustering and using 2 clusters in DBSCAN.When the two clusters were compared, it was observed that they were mostly concentrated in the middle.Outliers are clearly observed in both.
+
+
+
+## X-) Use PCA Techniques
+
+```{r}
+wine_prodNA<-bind_cols(wineQuality[1],missForest::prodNA(wineQuality[-1],noNA=0.1))
+wine_pca <- prcomp(wineQuality[,c(2:4,5,8,10)], center = TRUE,scale. = TRUE)
+summary(wine_pca)
+
+```
+
+<br>If we compare the PCA we did in step 5 with the results we made in this step, we used 10 PCAs in the first step, we used 6 PCAs in this step, and as a result, we reached 75% in the second step. In the first step, we reached 64% in the first 3 PCAs.We were able to reach 100% cumulatively in the first 6 steps.As a result, we have successfully increased our rate compared to the first PCA.<br>
+
+
+
+
+
+##  8-) Two classification techniques.
+#### a) We used the Decision Tree and Logistic Regression classification to better explain our data and to explain the two first relationships between our features more meaningfully.
+
+### 8.1-) Decision Tree Algorithm
+
+```{r,warning=FALSE}
+
+modelDecision <- rpart(formula= wine_type~., data=trainSet)
+modelDecision
+
+rpart.plot(modelDecision, box.palette="RdBu", shadow.col="gray", nn=TRUE)
+```
+
+```{r,warning=FALSE}
+probability_prediction <- predict(modelDecision,newdata = testSet,type = 'class')
+head(probability_prediction,50)
+
+confmatrixDecision <- table(testSet$wine_type,probability_prediction)
+confmatrixDecision
+```
+
+```{r,warning=FALSE}
+accurDecision <- (confmatrixDecision[1,1] + confmatrixDecision[2,2])/ sum(confmatrixDecision)
+accurDecision
+
+```
+<br>Root node is chlorides. If the amount of chlorides is greater than 0.062, it enters the red wine class, if not, we can put it in the white wine class.Our accuracy value is almost 1. Therefore, 97% accuracy is achieved with the decision tree classification algorithm.<br>
+
+### Z.b-) Decision tree with balanced data.
+
+```{r,warning=FALSE}
+set.seed(200)
+trainIndexx <- createDataPartition(dataset$wine_type, p = .8, list = FALSE)
+
+trainSett <- dataset[trainIndexx, ]
+testSett <- dataset[-trainIndexx, ]
+
+modelBalanced <- rpart( wine_type~., data=dataset)
+modelBalanced
+```
+
+```{r,warning=FALSE}
+
+rpart.plot(modelBalanced, box.palette="RdBu", shadow.col="gray", nn=TRUE)
+```
+
+```{r,warning=FALSE}
+probability_predictionD <- predict(modelBalanced,newdata = testSett,type = 'class')
+head(probability_predictionD,50)
+
+confmatrixB <- table(testSett$wine_type,probability_predictionD)
+confmatrixB
+```
+
+```{r,warning=FALSE}
+accurB <- (confmatrixB[1,1] + confmatrixB[2,2])/ sum(confmatrixB)
+accurB
+
+```
+<br>
+We used the decision tree, which is one of the classification algorithms for the unbalanced and balance dataset. While the accuracy rate was 97% in our unbalanced dataset, this rate decreased to 95% in the balance dataset. The classification algorithm we created in the first version of our data was more stable and more prone to making correct decisions than the balanced dataset.
+
+<br>
+
+### 8.2-) Logistic Regression
+
+Since we used logistic regression in question 6, we used the outputs of question 6 in this option.
+
+```{r,warning=FALSE}
+confMatrixLog
+accur
+```
+
+#### b) We used decision tree classification in 8.1 and logistic regression classification in 8.2.In order to decide which of our results is more accurate, we examined the accuracy values ​​in both classifications.While the accuracy value for the Decision tree is 98%, the Logistic Regression is 99%. Both values ​​are close to each other. However, our logistic regression model is better than our other model.When the created tables are examined, the number of wrongly estimated ones in the decision tree is higher than the number of wrongly-estimated ones in the logistic regression.
+
+
+## Y-) Missing Data Imputation
+
+### Y.a-) About 10% of the dataset was deleted.
+```{r}
+wineMis <- prodNA(wineQuality, 0.10)
+sum((is.na(wineMis)))
+missmap(wineMis)
+
+```
+<br>First we checked the NA values ​​in our data, there were 38 missing values ​​in total. But we pretended that they didn't exist because 38 missing values ​​wouldn't change the state of the model much. So we added the NA values ​​first.We made approximately 10% of our data as NA values.<br>
+
+```{r}
+write.csv(wineMis, "wineQualityLast.csv")
+##wineQualityLast <- read_csv("C:/Users/Mary/Desktop/wineQualityLast.csv")
+
+```
+
+### Y.b-) Missing data imputation.
+```{r}
+wineMis<-na.omit(wineMis)
+missmap(wineMis)
+set.seed(123)
+wineMis$wine_type <- as.factor(wineMis$wine_type)
+
+```
+
+### Y.c-) Logistic Regression in data with missing values.
+
+```{r}
+sample<- createDataPartition(y= wineMis$wine_type,p=0.8,list = FALSE)
+
+train_wineMis<- wineMis[sample,]
+test_wineMis <- wineMis[-sample,]
+```
+
+```{r}
+
+modelLogisticMis <- glm(wine_type~.,family="binomial", data=train_wineMis)
+summary(modelLogisticMis)
+
+```
+
+
+```{r}
+predictionMis <- predict(modelLogisticMis , test_wineMis ,type="response")
+
+confMatrixLogMis <- confusionMatrix(test_wineMis$wine_type , predictionMis)
+confMatrixLogMis
+```
+
+```{r}
+accurMis <- (confMatrixLogMis[1,1] + confMatrixLogMis[2,2])/ sum(confMatrixLogMis)
+accurMis
+accur
+```
+
+<br>When we apply logistic regression with the first version of our data, the accuracy value is close to 0.990, that is close to 1, while it increases to 0.996 when we do it with missing data values. It gives accurate results close to the two models. We could not observe a huge difference between our two models. Moreover, the variables that explain the model in a meaningful way are the same in the models created..<br>
+
+
+
+
+
+
+
+
+
